@@ -1,0 +1,152 @@
+<html>
+<head>
+<title>MemberApiController.java</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cf8e6d;}
+.s1 { color: #bcbec4;}
+.s2 { color: #bcbec4;}
+.s3 { color: #7a7e85;}
+.s4 { color: #5f826b; font-style: italic;}
+.s5 { color: #6aab73;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+MemberApiController.java</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">jpabook</span><span class="s2">.</span><span class="s1">jpashop</span><span class="s2">.</span><span class="s1">api</span><span class="s2">;</span>
+
+<span class="s0">import </span><span class="s1">jpabook</span><span class="s2">.</span><span class="s1">jpashop</span><span class="s2">.</span><span class="s1">domain</span><span class="s2">.</span><span class="s1">Member</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">jpabook</span><span class="s2">.</span><span class="s1">jpashop</span><span class="s2">.</span><span class="s1">service</span><span class="s2">.</span><span class="s1">MemberService</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">lombok</span><span class="s2">.</span><span class="s1">AllArgsConstructor</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">lombok</span><span class="s2">.</span><span class="s1">Data</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">lombok</span><span class="s2">.</span><span class="s1">RequiredArgsConstructor</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">org</span><span class="s2">.</span><span class="s1">springframework</span><span class="s2">.</span><span class="s1">web</span><span class="s2">.</span><span class="s1">bind</span><span class="s2">.</span><span class="s1">annotation</span><span class="s2">.*;</span>
+
+<span class="s0">import </span><span class="s1">javax</span><span class="s2">.</span><span class="s1">validation</span><span class="s2">.</span><span class="s1">Valid</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">java</span><span class="s2">.</span><span class="s1">util</span><span class="s2">.</span><span class="s1">List</span><span class="s2">;</span>
+<span class="s0">import </span><span class="s1">java</span><span class="s2">.</span><span class="s1">util</span><span class="s2">.</span><span class="s1">stream</span><span class="s2">.</span><span class="s1">Collectors</span><span class="s2">;</span>
+
+<span class="s3">// @Controller + @ResponseBody =</span>
+<span class="s3">// 데이터를 바로 json이나 xml으로 반환할 때 쓰는 어노테이션</span>
+<span class="s1">@RestController</span>
+<span class="s1">@RequiredArgsConstructor</span>
+<span class="s0">public class </span><span class="s1">MemberApiController </span><span class="s2">{</span>
+
+    <span class="s0">private  final </span><span class="s1">MemberService memberService</span><span class="s2">;</span>
+
+    <span class="s4">/**</span>
+     <span class="s4">* 조회 ver 1 : 응답 값으로 엔티티를 직접 외부 노출</span>
+     <span class="s4">*  └ 문제점 : 엔티티에 프레젠테이션 계층을 위한 로직이 추가됨 : 로직이 어렵고 양이 많음</span>
+     <span class="s4">*  └ 기본적으로 엔티티의 모든 값이 노출됨</span>
+     <span class="s4">*  └ 응답스펙을 맞춰줘야 하므로 로직이 또 추가됨. 어노테이션도 추가</span>
+     <span class="s4">*  └ 실무에서는 같은 엔티티에 대해서 API가 용도에 따라 다양하게 만들어지는데,</span>
+     <span class="s4">*  └ 한 엔티티에 각각의 API를 위한 프레젠테이션을 응답로직을 담기가 어렵다.</span>
+     <span class="s4">*  └ 엔티티가 바뀌면 API 스펙도 바뀜.</span>
+     <span class="s4">*</span>
+     <span class="s4">*  &gt;결론 : API 응답 스펙에 맞추어 별도의 DTO를 반환함.</span>
+     <span class="s4">*/</span>
+    <span class="s3">// 조회 ver 1 : 사실상 최악의 API</span>
+<span class="s3">//    @GetMapping(&quot;/api/v1/members&quot;)</span>
+<span class="s3">//    public List&lt;Member&gt; memberV1(){</span>
+<span class="s3">//        return memberService.findMembers();</span>
+<span class="s3">//        // @RestController 어노테이션 덕분에 json으로 자동 변환되어서 리턴됨.</span>
+<span class="s3">//    }</span>
+
+    <span class="s4">/**</span>
+     <span class="s4">* 조회 ver 2: 응답 값으로 엔티티가 아닌 별도의 DTO자체를 반환한다.</span>
+     <span class="s4">*/</span>
+    <span class="s1">@GetMapping</span><span class="s2">(</span><span class="s5">&quot;api/v2/members&quot;</span><span class="s2">)</span>
+    <span class="s0">public </span><span class="s1">Result memberV2</span><span class="s2">() {</span>
+        <span class="s1">List</span><span class="s2">&lt;</span><span class="s1">Member</span><span class="s2">&gt; </span><span class="s1">findMembers </span><span class="s2">= </span><span class="s1">memberService</span><span class="s2">.</span><span class="s1">findMembers</span><span class="s2">();</span>
+        <span class="s3">// 엔티티 -&gt; DTO 변환</span>
+        <span class="s1">List</span><span class="s2">&lt;</span><span class="s1">MemberDto</span><span class="s2">&gt; </span><span class="s1">collect </span><span class="s2">= </span><span class="s1">findMembers</span><span class="s2">.</span><span class="s1">stream</span><span class="s2">()</span>
+                <span class="s2">.</span><span class="s1">map</span><span class="s2">(</span><span class="s1">m -&gt; </span><span class="s0">new </span><span class="s1">MemberDto</span><span class="s2">(</span><span class="s1">m</span><span class="s2">.</span><span class="s1">getName</span><span class="s2">()))</span>
+                <span class="s2">.</span><span class="s1">collect</span><span class="s2">(</span><span class="s1">Collectors</span><span class="s2">.</span><span class="s1">toList</span><span class="s2">());</span>
+
+        <span class="s0">return new </span><span class="s1">Result</span><span class="s2">(</span><span class="s1">collect</span><span class="s2">);</span>
+    <span class="s2">}</span>
+
+    <span class="s1">@Data</span>
+    <span class="s1">@AllArgsConstructor</span>
+    <span class="s0">static class </span><span class="s1">Result</span><span class="s2">&lt;</span><span class="s1">T</span><span class="s2">&gt; { </span><span class="s3">// object 타입으로 반환하기 위한 껍데기. (list, collection 타입반환 X )</span>
+        <span class="s0">private </span><span class="s1">T data</span><span class="s2">; </span><span class="s3">// T = Generic type = 계산하기 위한 또는 무엇을 담기 위한</span>
+    <span class="s2">}</span>
+
+    <span class="s1">@Data</span>
+    <span class="s1">@AllArgsConstructor</span>
+    <span class="s0">static  class </span><span class="s1">MemberDto </span><span class="s2">{</span>
+        <span class="s0">private </span><span class="s1">String name</span><span class="s2">;</span>
+    <span class="s2">}</span>
+
+    <span class="s4">/**</span>
+     <span class="s4">* V1 : 요청값으로 Member 엔티티를 직접 받는다.</span>
+     <span class="s4">* -단점 : 위와 상동 하나 추가적인 단점은~ 엔티티에 API 검증을 위한 로직이 들어간다. (@NotEmpty 등등)</span>
+     <span class="s4">* -결론 : API 요청 스펙에 맞추어 별도의 DTO를 파라미터로 받는다.</span>
+     <span class="s4">*/</span>
+    <span class="s1">@PostMapping</span><span class="s2">(</span><span class="s5">&quot;/api/v1/members&quot;</span><span class="s2">)</span>
+    <span class="s0">public </span><span class="s1">CreateMemberResponse saveMemberV1</span><span class="s2">(</span><span class="s1">@RequestBody @Valid Member member</span><span class="s2">) {</span>
+        <span class="s1">Long id </span><span class="s2">= </span><span class="s1">memberService</span><span class="s2">.</span><span class="s1">join</span><span class="s2">(</span><span class="s1">member</span><span class="s2">);</span>
+        <span class="s0">return new </span><span class="s1">CreateMemberResponse</span><span class="s2">(</span><span class="s1">id</span><span class="s2">);</span>
+    <span class="s2">}</span>
+
+    <span class="s4">/**</span>
+     <span class="s4">* 등록 V2 : 요청 값으로 Member 엔티티 대신에 별도의 DTO를 받는다.</span>
+     <span class="s4">*/</span>
+    <span class="s1">@PostMapping</span><span class="s2">(</span><span class="s5">&quot;/api/v2/members&quot;</span><span class="s2">)</span>
+    <span class="s0">public </span><span class="s1">CreateMemberResponse saveMemberV2</span><span class="s2">(</span><span class="s1">@RequestBody @Valid CreateMemberRequest request</span><span class="s2">) {</span>
+
+        <span class="s1">Member member </span><span class="s2">= </span><span class="s0">new </span><span class="s1">Member</span><span class="s2">();</span>
+        <span class="s1">member</span><span class="s2">.</span><span class="s1">setName</span><span class="s2">(</span><span class="s1">request</span><span class="s2">.</span><span class="s1">name</span><span class="s2">);</span>
+
+        <span class="s1">Long id </span><span class="s2">= </span><span class="s1">memberService</span><span class="s2">.</span><span class="s1">join</span><span class="s2">(</span><span class="s1">member</span><span class="s2">);</span>
+        <span class="s0">return new </span><span class="s1">CreateMemberResponse</span><span class="s2">(</span><span class="s1">id</span><span class="s2">);</span>
+    <span class="s2">}</span>
+
+    <span class="s4">/**</span>
+     <span class="s4">* 수정</span>
+     <span class="s4">*/</span>
+    <span class="s1">@PostMapping</span><span class="s2">(</span><span class="s5">&quot;/api/v2/members/{id}&quot;</span><span class="s2">)</span>
+    <span class="s0">public </span><span class="s1">UpdateMemberResponse updateMemberV2</span><span class="s2">(</span>
+            <span class="s1">@PathVariable</span><span class="s2">(</span><span class="s5">&quot;id&quot;</span><span class="s2">)</span><span class="s1">Long id</span><span class="s2">,</span>
+            <span class="s1">@RequestBody @Valid UpdateMemberRequest request</span><span class="s2">) {</span>
+
+        <span class="s1">memberService</span><span class="s2">.</span><span class="s1">update</span><span class="s2">(</span><span class="s1">id</span><span class="s2">, </span><span class="s1">request</span><span class="s2">.</span><span class="s1">getName</span><span class="s2">());</span>
+        <span class="s1">Member findMember </span><span class="s2">= </span><span class="s1">memberService</span><span class="s2">.</span><span class="s1">findOne</span><span class="s2">(</span><span class="s1">id</span><span class="s2">);</span>
+        <span class="s0">return new </span><span class="s1">UpdateMemberResponse</span><span class="s2">(</span><span class="s1">findMember</span><span class="s2">.</span><span class="s1">getId</span><span class="s2">(), </span><span class="s1">findMember</span><span class="s2">.</span><span class="s1">getName</span><span class="s2">());</span>
+    <span class="s2">}</span>
+
+
+
+    <span class="s1">@Data</span>
+    <span class="s0">static class </span><span class="s1">CreateMemberResponse </span><span class="s2">{</span>
+        <span class="s0">private </span><span class="s1">Long id</span><span class="s2">;</span>
+
+        <span class="s0">public </span><span class="s1">CreateMemberResponse</span><span class="s2">(</span><span class="s1">Long id</span><span class="s2">){</span>
+            <span class="s0">this</span><span class="s2">.</span><span class="s1">id </span><span class="s2">= </span><span class="s1">id</span><span class="s2">;</span>
+        <span class="s2">}</span>
+    <span class="s2">}</span>
+
+    <span class="s1">@Data</span>
+    <span class="s0">static class </span><span class="s1">CreateMemberRequest </span><span class="s2">{</span>
+        <span class="s0">private </span><span class="s1">String name</span><span class="s2">;</span>
+    <span class="s2">}</span>
+
+    <span class="s1">@Data</span>
+    <span class="s1">@AllArgsConstructor</span>
+    <span class="s0">static class </span><span class="s1">UpdateMemberResponse </span><span class="s2">{</span>
+        <span class="s0">private </span><span class="s1">Long id</span><span class="s2">;</span>
+        <span class="s0">private </span><span class="s1">String name</span><span class="s2">;</span>
+    <span class="s2">}</span>
+
+    <span class="s1">@Data</span>
+    <span class="s0">static class </span><span class="s1">UpdateMemberRequest </span><span class="s2">{</span>
+        <span class="s0">private </span><span class="s1">String name</span><span class="s2">;</span>
+    <span class="s2">}</span>
+<span class="s2">}</span>
+</pre>
+</body>
+</html>
